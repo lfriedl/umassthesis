@@ -20,4 +20,7 @@ mkdir -p "$LATEXDIR" "$BSTDIR"
 cd "$BSTDIR" && ln -fs "$WHEREAMI"/*.bst .
 cd "$LATEXDIR" && ln -fs "$WHEREAMI"/*.cls "$WHEREAMI"/*.clo .
 
-cd "$TEXVAR" && mktexlsr .
+echo "Created symlinks in $TEXVAR:"
+cd "$TEXVAR" && ls -lF "tex/latex/$NAME" "bibtex/bst/$NAME"
+
+mktexlsr "$TEXVAR"
