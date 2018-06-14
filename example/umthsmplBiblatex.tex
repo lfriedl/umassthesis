@@ -89,6 +89,12 @@
 \documentclass{umassthesis}          % for Ph.D. dissertation or proposal
 % \documentclass[thesis]{umassthesis}  % for Master's thesis
 
+\usepackage[backend=bibtex,style=numeric,natbib=true,sorting=nyt,sortcites=true,
+		maxbibnames=10,minbibnames=5,maxcitenames=2,firstinits=true,
+		isbn=false,language=american]{biblatex}
+\addbibresource{umthsmpl.bib}
+
+
 %%
 %% If you have enough figures or tables that you run out of space for their
 %% numbers in the List of Tables or List of figures, you can use the following
@@ -491,9 +497,9 @@ erat.
 %%
 %% A bibliography is required.
 \interlinepenalty=10000  % prevent split bibliography entries
+
 \nocite{*}  % print all bib entries
-\bibliographystyle{umassthesis}
-\bibliography{umthsmpl}
+\printbibliography
 \end{document}
 
 %%% Local Variables: 

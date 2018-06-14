@@ -780,10 +780,15 @@
   \let\endbase@thebibliography\endthebibliography%
   %
   \@ifpackageloaded{biblatex}{%
-    % Double-space the bibliography entries, according to an interpretation
-    % of the discussion at
-    % http://tex.stackexchange.com/questions/13742/what-does-double-spacing-mean
-    \setlength{\bibitemsep}{\baselineskip}%
+    % Double-space between bibliography entries.
+    % Understanding spacing with help from http://tex.stackexchange.com/questions/13742/what-does-double-spacing-mean and 
+    % https://tex.stackexchange.com/questions/30073:
+    % Always, \baselineskip = \fontsize + interline skip. The variable here, \bibitemsep (which comes straight from \itemsep in lists), 
+    % corresponds to that interline skip. More concisely: b = f + i.
+    % Normally, for single spacing, b = f + i = 1.2 * f.
+    % For double spacing, b' = f + i' = 2 * f. 
+    % Solve for i' (\bibitemsep) in terms of b (\baselineskip): i' = f = b / 1.2 = .833 * b. 
+    \setlength{\bibitemsep}{.833\baselineskip}%
     % Add entry to TOC
     \AtBeginBibliography{%
       \addcontentsline{toc}{\toc@section}{\MakeTextUppercase{\bibname}}%
