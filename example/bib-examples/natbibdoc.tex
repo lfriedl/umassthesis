@@ -1,0 +1,21 @@
+\documentclass{umassthesis}
+
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[bookmarksnumbered,unicode]{hyperref}
+
+\begin{document}
+
+%\frontmatter
+\mainmatter
+Hi, here's some sample text.
+
+And more, in which we test natbib-style citations: according to \citeauthor{Abril07}, also known as \citet{Abril07} the answer is maybe \cite{Abril07}.
+
+\backmatter 
+
+\nocite{*}  % print all bib entries
+%\bibliographystyle{ACM-Reference-Format}  % .bst file to use
+\bibliographystyle{umassthesis}
+\bibliography{sample-bibliography}  % .bib file to use
+
+\end{document}

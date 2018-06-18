@@ -1,10 +1,13 @@
 *.aux
 *.bbl
 *.blg
+*-blx.bib
 *.lof
 *.log
 *.lot
 *.lyx~
 *.pdf
 *.toc
+*.run.xml
+*.synctex.gz
 
