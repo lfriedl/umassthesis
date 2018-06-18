@@ -1,0 +1,21 @@
+\documentclass{umassthesis}
+
+\usepackage[backend=bibtex,style=numeric,natbib=true,sorting=nyt,sortcites=true,
+		maxbibnames=10,minbibnames=5,maxcitenames=2,firstinits=true,
+		isbn=false,language=american]{biblatex}
+\addbibresource{sample-bibliography.bib}
+
+\begin{document}
+
+%\frontmatter
+\mainmatter
+Hi, here's some sample text.
+
+And more, in which we test natbib-style citations: according to \citeauthor{Abril07}, also known as \citet{Abril07} the answer is maybe \cite{Abril07}.
+
+\backmatter 
+
+\nocite{*}  % print all bib entries
+\printbibliography
+
+\end{document}
