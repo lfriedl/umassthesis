@@ -1,0 +1,339 @@
+
+% ---- Bibliography settings and experiments with BibLaTeX
+
+
+% -- "In <proceedings>", not "In: <proceedings>" --
+\renewcommand{\intitlepunct}{\addspace}
+% -- And no "In" for journals. --
+\renewbibmacro*{in:}{%
+  \ifentrytype{article}{}{\printtext{\bibstring{in}\intitlepunct}}}
+
+% -- Try to disallow entries from breaking across pages --
+% (From http://tex.stackexchange.com/questions/43260/biblatex-no-pagebreak-in-bibliography-entry)
+\patchcmd{\bibsetup}{\interlinepenalty=5000}{\interlinepenalty=10000}{}{}
+% Consider also, from http://tex.stackexchange.com/questions/91686/preventing-page-breaks-from-occurring-in-bibliography-items:
+% (But these are already the default settings for biblatex.)
+%\patchcmd{\thebibliography}{\clubpenalty4000}{\clubpenalty10000}{}{}
+%\patchcmd{\thebibliography}{\widowpenalty4000}{\clubpenalty10000}{}{}
+
+% -- Only print editors' names if there's no author --
+\AtEveryBibitem{%
+ \ifnameundef{author}{}{\clearname{editor}}%
+}
+
+
+% -- Don't print DOI + URL --
+% Specifically, print no more than one of doi, eprint, or url, whichever comes first.
+% (Subject to respecting the global flags about printing these.)
+% Overrides code in standard.bbx
+\renewbibmacro*{doi+eprint+url}{%
+  \ifboolexpr{
+    test {\iftoggle{bbx:doi}}
+    and
+    not test {\iffieldundef{doi}}
+  }
+    {\printfield{doi}}
+    {    
+      \ifboolexpr{
+        test {\iftoggle{bbx:eprint}}
+        and
+        not test {\iffieldundef{eprint}}
+      }
+      {\usebibmacro{eprint}}
+      {
+          \ifboolexpr{
+            test {\iftoggle{bbx:url}}
+            and
+            not test {\iffieldundef{url}}
+      	}
+	{\usebibmacro{url+urldate}}
+        {}      
+      }
+    }
+}
+
+
+% -- Name order: can choose among last-first, first-last, and last-first/first-last (which treats 1st name differently) --
+%\DeclareNameAlias{default}{last-first/first-last}
+% (Decided to keep it as before: first-last but with first names initialized.)
+
+
+% --- Titles ---
+
+% -- Remove quotes from titles for inproceedings and some others. --
+\DeclareFieldFormat
+  [article,inbook,incollection,inproceedings,patent,thesis,unpublished]
+  {title}{#1\isdot}
+
+
+% -- Put conference paper titles into sentence case (only first word is capitalized) --
+
+% Note: because the following code uses the symbol '@', must surround it with \makeatletter / \makeatother to prevent parse errors
+\makeatletter
+
+% Define "sentencecase" using \MakeSentenceCase
+% (borrowed from IEEE's style file: http://mirrors.ctan.org/macros/latex/contrib/biblatex-contrib/biblatex-ieee/ieee.bbx). 
+% Affects \printfield (only), called as \printfield[sentencecase]{some-particular-fieldname}.
+\DeclareFieldFormat[article,inbook,incollection,inproceedings,patent,thesis,unpublished]{sentencecase}{\bbx@colon@search{\MakeSentenceCase*}{#1}}
+
+% For sentencecase to work, also need \bbx@colon@search from that file:
+% [I believe this function searches for colons, so that we can capitalize the next word]
+\newcommand*{\bbx@colon@search}[2]{%
+  \bbx@colon@search@auxi\empty#2: \stop{#1}%
+}
+\long\def\bbx@colon@search@auxi#1: #2\stop#3{%
+  \expandafter\bbx@colon@search@auxii\expandafter{#1}{#3}%
+  \ifblank{#2}
+    {}
+    {%
+      : %
+      \bbx@colon@search@auxi\empty#2\stop{#3}%
+    }%
+}
+\newcommand\bbx@colon@search@auxii[2]{#2{#1}}
+
+
+\makeatother
+
+% Now that "sentencecase" is defined, need to have it be called whenever a title is printed (from one of the entry types specified in \DeclareFieldFormat).
+\renewbibmacro*{title}{%
+  \ifboolexpr{
+    test {\iffieldundef{title}}
+    and
+    test {\iffieldundef{subtitle}}
+  }
+    {}
+    {\printtext[title]{%
+       \printfield[sentencecase]{title}%
+       \setunit{\subtitlepunct}%
+       \printfield[sentencecase]{subtitle}}%
+     \newunit}%
+  \printfield{titleaddon}}
+
+
+% Next, want to have booktitles (proceedings names) use actual title case.
+
+% -- Put all other titles into a real title case --
+
+% Note: biblatex.def by default prints most titles in format "titlecase", but defines "titlecase" to mean "do nothing." 
+% So, one option is to re-define titlecase:
+%\DeclareFieldFormat{titlecase}{\bbx@colon@search\MakeCapital{#1}}  % no change, because it just capitalizes the very 1st letter
+%\DeclareFieldFormat{titlecase}{\bbx@colon@search\MakeUppercase{#1}}    % test something extreme. Yup, that shows up.
+
+\usepackage{titlecaps}
+\Addlcwords{for a is but and with of in as the etc on to if from}
+\DeclareFieldFormat{titlecase}{\titlecap{#1}}			% eureka! It works! Beautiful!
+
+
+
+
+
+
+% -- Change formatting of "volume, issue" for journal articles to follow ACM's style: "\italics{journal name, volume} (issue)"
+% Actually, I'm instead doing: "\italics{journal name, volume}(issue)". I might want to change it further to avoid an awkwardly parenthesized year right afterwards.
+% This function affects articles. Technically I should also change \newbibmacro*{title+issuetitle}, used for periodicals, but I don't have any in my bib file.
+\renewbibmacro*{volume+number+eid}{%
+  \setunit{\addcomma\addspace}%				% See documentation section 4.11.7.1 as well as the definition of \setunit to further fix this.
+  \printfield[emph]{volume}%
+  \printfield[parens]{number}%
+  \setunit{\addcomma\addspace}%
+  \printfield{eid}}
+
+% Note: if the journal ends in a period (as an abbreviation), neither this nor the original adds a comma after it. Maybe \addcomma is too polite of a command?
+
+% Note: the way the journal gets italicized is: bibmacro{journal} calls \printfield{journaltitle}, which goes through 
+% \DeclareFieldFormat{journaltitle}{\mkbibemph{#1}}
+
+% Note: here's why "volume" isn't italicized by default. 
+%\DeclareFieldFormat{volume}{\bibstring{volume}~#1}% volume of a book
+%\DeclareFieldFormat[article,periodical]{volume}{#1}% volume of a journal
+% We can change that:
+%	\DeclareFieldFormat[article,periodical]{volume}{\mkbibemph{#1}}% volume of a journal
+% And put "number" in parens
+%	\DeclareFieldFormat[article,periodical]{number}{\mkbibparens{#1}}% number of a journal
+% But I might as well save code by putting these changes in the function above.
+
+% -- Omit the string "vol." from inproceedings --
+% By default, already omitted from articles & periodicals
+\DeclareFieldFormat[inproceedings]{volume}{#1}% volume of a journal
+
+
+% -- Can I remove "USA" from locations / venues? --
+% Ah, no, because that only works when using biber. (Could try it later.)
+%\DeclareSourcemap{ 
+%    \maps[datatype=bibtex]{
+% 	\map{
+%		\step[fieldsource=location,
+%			match=\regexp{(.+),\s+USA\z},
+%			replace=\regexp{$1}]
+%		\step[fieldsource=venue,
+%			match=\regexp{(.+),\s+USA\z},
+%			replace=\regexp{$1}]
+%	}
+%    }
+%}
+
+
+% -- Change the formatting of conference proceedings to something more sensible --
+% Try for this: "<authors>. <title>. In <eventtitleaddon>: <booktitle> (<conference location, date>), 
+% <publisher> <series> <volume> (<number>), pp. <pages>. <doi or url>."
+% But only print the "publisher" section if there's a series.
+
+% Original code was in standard.bbx
+\DeclareBibliographyDriver{inproceedings}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{begentry}%
+  \usebibmacro{author/translator+others}%
+  \setunit{\labelnamepunct}\newblock
+  \usebibmacro{title}%
+  \newunit
+  \printlist{language}%
+  \newunit\newblock
+  \usebibmacro{byauthor}%
+  \newunit\newblock
+  \usebibmacro{in:}%
+% old
+%  \usebibmacro{maintitle+booktitle}%
+%  \newunit\newblock
+%  \usebibmacro{event+venue+date}%
+%  \newunit\newblock
+%  \usebibmacro{byeditor+others}%
+%  \newunit\newblock
+%  \iffieldundef{maintitle}
+%    {\printfield{volume}%
+%     \printfield{part}}
+%    {}%
+%  \newunit
+%  \printfield{volumes}%
+%  \newunit\newblock
+%  \usebibmacro{series+number}%
+%  \newunit\newblock
+%  \printfield{note}%
+%  \newunit\newblock
+%  \printlist{organization}%
+%  \newunit
+%  \usebibmacro{publisher+location+date}%
+%  \newunit\newblock
+%  \usebibmacro{chapter+pages}%
+% 
+% new
+  \usebibmacro{maintitle+confseries+booktitle}%  	% "series: booktitle". with macros redefined to include the series
+  \usebibmacro{event+venue+date}%   	  		% "(location, year)". but redefining it to actually print date, not eventdate
+%  \newunit								% note: standard unit punct for if some other field comes next...
+  \newunit\newblock
+  \usebibmacro{byeditor+others}%
+  \newunit\newblock
+  \printfield{note}%
+  \newunit\newblock
+  \printlist{organization}%		% (usually empty)
+% end "usually empty" fields
+    \setunit{\addcomma\addspace}%			% ...but in the usual case, just ", ". It's what always precedes publisher.
+  \usebibmacro{pub+ser+vol+num}%			% includes "<publisher> <series> <volume> (<number>), pp. <pages>"
+   \setunit{\addspace}
+  \usebibmacro{chapter+pages}%
+  \newunit\newblock
+  \printfield{note}%			% (usually empty)
+% end changes
+  \newunit\newblock
+  \iftoggle{bbx:isbn}
+    {\printfield{isbn}}
+    {}%
+  \newunit\newblock
+  \usebibmacro{doi+eprint+url}%
+  \newunit\newblock
+  \usebibmacro{addendum+pubstate}%
+  \setunit{\bibpagerefpunct}\newblock
+  \usebibmacro{pageref}%
+  \newunit\newblock
+  \iftoggle{bbx:related}
+    {\usebibmacro{related:init}%
+     \usebibmacro{related}}
+    {}%
+  \usebibmacro{finentry}}
+
+% new:  "<publisher> <series> <volume> (<number>)". But, skip all of it unless there's a series.
+\newbibmacro*{pub+ser+vol+num}{%
+\iffieldundef{series}
+    {}
+  {\usebibmacro{publisher}%    				% newly defined below, includes only publisher
+  \setunit*{\addspace}					% using \setunit* for the next few lines so that the above ", " is still what's used when the next thing prints
+  \printfield{series}%
+  \setunit*{\addspace}
+  \printfield{volume}%
+  % \setunit*{\addspace}
+  \printfield[parens]{number}}%
+}
+
+% For inproceedings entries, a new macro that makes booktitle include the series.
+\newbibmacro*{maintitle+confseries+booktitle}{%
+  \iffieldundef{maintitle}
+    {}
+    {\usebibmacro{maintitle}%
+     \newunit\newblock
+     \iffieldundef{volume}
+       {}
+       {\printfield{volume}%
+        \printfield{part}%
+        \setunit{\addcolon\addspace}}}%
+  \usebibmacro{confseries+booktitle}}%
+
+% Re-modified to use eventtitleaddon as the field where the conference acronym is stored.
+\newbibmacro*{confseries+booktitle}{%
+  \ifboolexpr{
+    test {\iffieldundef{booktitle}}
+    and
+    test {\iffieldundef{booksubtitle}}
+    and
+    test {\iffieldundef{eventtitleaddon}}
+  }
+    {}
+    {\printtext[booktitle]{%
+	\iffieldundef{eventtitleaddon}
+              {}
+              {\printfield{eventtitleaddon}% 
+              \setunit{\addcolon\addspace}}%
+           \printfield[titlecase]{booktitle}%
+           \setunit{\subtitlepunct}%
+           \printfield[titlecase]{booksubtitle}}%
+     }%
+  \setunit{\addcomma\addspace}%
+  \iffieldundef{booktitleaddon}
+  {}% 	% for debugging: \printtext{(hello)} }
+  {%\setunit{\addcomma\addspace}%
+  \printfield{booktitleaddon}%
+  \newunit}
+  }
+
+  
+% Make venue + date mean the publication date. Also, no longer actually printing any "event" fields here.
+\renewbibmacro*{event+venue+date}{%
+  \ifboolexpr{  % put everything in parens, so check if there's anything to put inside
+    test {\iffieldundef{venue}}
+    and
+    test {\iffieldundef{year}}
+%    and
+%    test {\iffieldundef{eventtitle}}
+%    and 
+%    test {\iffieldundef{eventtitleaddon}}
+  }
+    {}
+    {\setunit{\addspace}%
+     \printtext[parens]{%
+%  \printfield{eventtitle}%
+%  \newunit
+%  \printfield{eventtitleaddon}%
+       \printfield{venue}%
+       \setunit*{\addcomma\addspace}%
+       \usebibmacro{date}}}%
+  \newunit}
+
+
+% -- For inproceedings, omit publisher's location and date --
+\newbibmacro*{publisher}{%
+  \printlist{publisher}%
+  \setunit*{\addcomma\addspace}%
+  \newunit}
+
+
+
+% --- End bibliography settings

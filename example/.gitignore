@@ -6,6 +6,7 @@
 *.log
 *.lot
 *.lyx~
+*.out
 *.pdf
 *.toc
 *.run.xml

@@ -1,9 +1,15 @@
 \documentclass{umassthesis}
 
-\usepackage[backend=bibtex,style=numeric,natbib=true,sorting=nyt,sortcites=true,
+\usepackage[hidelinks]{hyperref}  % if using hyperref, it must be loaded prior to biblatex
+\usepackage[backend=bibtex8,style=numeric,natbib=true,sorting=nyt,sortcites=true,
 		maxbibnames=10,minbibnames=5,maxcitenames=2,firstinits=true,
 		isbn=false,language=american]{biblatex}
+% Tweak the options to get IEEE style
+%\usepackage[backend=bibtex8,style=ieee,natbib=true,sorting=nyt,sortcites=true,
+%		maxbibnames=10,minbibnames=5,firstinits=true,
+%		isbn=false,language=american]{biblatex}
 \addbibresource{sample-bibliography.bib}
+%\input{biblatex-LDFheaders}
 
 \begin{document}
 
